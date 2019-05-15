@@ -46,7 +46,6 @@ public class DeployService {
       String.format("%s/%s/branches?exists_on_github=true", TRAVIS_BASE_URL, TRAVIS_REPOSITORY_ID);
 
   public String deployJar(MultipartFile jar, String branch) throws IOException, InterruptedException {
-    sendMessageToSlack("Build artifact successfully sent to AWS");
     Map<String, String> commands = getCommandsByBranch(branch);
     File appFile = new File(commands.get("filePath"));
     if (appFile.exists()) {
@@ -54,6 +53,10 @@ public class DeployService {
     }
     jar.transferTo(new File(commands.get("filePath")));
 
+    sendMessageToSlack(
+        String.format(
+            "Build artifact %s was successfully sent to AWS. Waiting 60 seconds for start: http://ec2-3-14-226-139.us-east-2.compute.amazonaws.com:900%d",
+            commands.get("filePath"), "master".equals(branch) ? 0 : 1));
     executeChecks();
     executeShellCommand(commands.get("runScript"));
     return "successfully";
@@ -158,6 +161,8 @@ public class DeployService {
   }
 
   public String getBranchFromSlackEvent(String body) throws IOException {
+    //TODO move deploy check before all branches
+    System.out.println(body);
     ObjectNode rootNode = new ObjectMapper().readValue(body, ObjectNode.class);
     if (rootNode.has("event")) {
       JsonNode event = rootNode.get("event");
@@ -191,7 +196,7 @@ public class DeployService {
           String requestId = initTravisBuildWithDeploy(branchName);
           if (StringUtils.hasText(requestId)) {
             sendMessageToSlack(
-                String.format("Travis build started: branch=%s requestId=%s", branchName, requestId));
+                String.format("Travis build for branch=%s started: https://travis-ci.com/skosinskiy/dan-it-final-project/builds", branchName));
           }
         } else {
           sendMessageToSlack(
