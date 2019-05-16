@@ -142,7 +142,7 @@ public class DeployService {
         "    \"request\": {\n" +
         "        \"branch\": \"" + branch + "\",\n" +
         "        \"config\": {\n" +
-        "            \"after_success\": \"curl -X POST http://ec2-3-14-226-139.us-east-2.compute.amazonaws.com:9002/deploy -F 'jar=@/home/travis/build/skosinskiy/dan-it-final-project/target/final-project-0.0.1-SNAPSHOT.jar' -F 'branch=" + branch + "' --max-time 15\"\n" +
+        "            \"after_success\": \"curl -X POST http://ec2-3-14-226-139.us-east-2.compute.amazonaws.com:9002/deploy -F 'jar=@/home/travis/build/skosinskiy/dan-it-final-project/target/final-project-0.0.1-SNAPSHOT.jar' -F 'branch=" + branch + "'\"\n" +
         "        }\n" +
         "    }\n" +
         "}";
@@ -197,8 +197,6 @@ public class DeployService {
   }
 
   public String getBranchFromSlackEvent(String body) throws IOException {
-    //TODO move deploy check before all branches
-    System.out.println(body);
     ObjectNode rootNode = new ObjectMapper().readValue(body, ObjectNode.class);
     if (rootNode.has("event")) {
       JsonNode event = rootNode.get("event");
