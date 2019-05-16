@@ -45,25 +45,61 @@ public class DeployService {
   private static final String TRAVIS_REPOSITORY_BRANCHES_URL =
       String.format("%s/%s/branches?exists_on_github=true", TRAVIS_BASE_URL, TRAVIS_REPOSITORY_ID);
 
+  private static final String AWS_HOST = "http://ec2-3-14-226-139.us-east-2.compute.amazonaws.com";
+  private static final int MAX_CHECKS_NUMBER = 5;
+
   public String deployJar(MultipartFile jar, String branch) throws IOException, InterruptedException {
+    sendMessageToSlack(String.format(
+        "Build artifact from branch %s was successfully sent to AWS. Waiting for 1 minute to deploy.", branch));
     Map<String, String> commands = getCommandsByBranch(branch);
+    transferFile(jar, commands);
+    executeChecks(branch);
+    executeShellCommand(commands.get("runScript"));
+    return "successfully";
+  }
+
+  private void transferFile(MultipartFile jar, Map<String, String> commands) throws IOException {
     File appFile = new File(commands.get("filePath"));
     if (appFile.exists()) {
       appFile.delete();
     }
     jar.transferTo(new File(commands.get("filePath")));
-
-    sendMessageToSlack(
-        String.format(
-            "Build artifact %s was successfully sent to AWS. Waiting 60 seconds for start: http://ec2-3-14-226-139.us-east-2.compute.amazonaws.com:900%d",
-            commands.get("filePath"), "master".equals(branch) ? 0 : 1));
-    executeChecks();
-    executeShellCommand(commands.get("runScript"));
-    return "successfully";
   }
 
-  private void executeChecks() {
-    //TODO implement this method
+  private String getUrlByBranch(String branch) {
+    String port = "master".equals(branch) ? "9000" : "9001";
+    return String.format("%s:%s", AWS_HOST, port);
+  }
+
+  private boolean checkUrlStatusCode(String url) {
+    ResponseEntity<String> response = new RestTemplate().exchange(url, HttpMethod.GET, null, String.class);
+    return response.getStatusCode().is2xxSuccessful();
+  }
+
+  private void executeChecks(String branch) {
+    String url = getUrlByBranch(branch);
+    Runnable runnable = () -> {
+      int checksNumber = 0;
+      while (checksNumber < 5) {
+        try {
+          checksNumber++;
+          Thread.sleep(15000);
+          if (checkUrlStatusCode(url)) {
+            sendMessageToSlack(String.format(
+                "Application from branch %s was successfully deployed: %s", branch, url));
+            checksNumber = MAX_CHECKS_NUMBER;
+          }
+        } catch (Exception e) {
+          if (checksNumber == MAX_CHECKS_NUMBER) {
+            sendMessageToSlack(String.format(
+                "WARNING! Application from branch %s is unavailable after all checks!", branch));
+          }
+        }
+
+      }
+    };
+
+    new Thread(runnable).start();
   }
 
   private Map<String, String> getCommandsByBranch(String branch) {
