@@ -45,7 +45,7 @@ public class DeployService {
   private static final String TRAVIS_REPOSITORY_BRANCHES_URL =
       String.format("%s/%s/branches?exists_on_github=true", TRAVIS_BASE_URL, TRAVIS_REPOSITORY_ID);
 
-  private static final String AWS_HOST = "http://ec2-3-14-226-139.us-east-2.compute.amazonaws.com";
+  private static final String AWS_HOST = "https://ec2-3-14-226-139.us-east-2.compute.amazonaws.com";
   private static final int MAX_CHECKS_NUMBER = 5;
 
   public String deployJar(MultipartFile jar, String branch) throws IOException, InterruptedException {
