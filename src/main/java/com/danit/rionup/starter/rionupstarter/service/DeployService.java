@@ -34,7 +34,7 @@ public class DeployService {
   private static final String DEV_JAR_PATH = ARTIFACTS_PATH + DEV_JAR_NAME;
 
   private static final String SLACK_MESSAGE_URL =
-      "https://hooks.slack.com/services/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";
+      "https://hooks.slack.com/services/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";
 
   private static final String TRAVIS_TOKEN = "token YNwrtvmNH9NU015vVAGHIQ";
   private static final String TRAVIS_API_VERSION = "3";
